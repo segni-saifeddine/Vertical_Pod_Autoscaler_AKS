@@ -22,14 +22,17 @@ Requests and limits depend on how much memory and CPU the application uses.Those
 ### Use of VPA : Vertical Pod Autoscaler
 - Kubernetes Vertical Pod Autoscaler (VPA) is a component you install in your cluster. It increases and decreases container CPU and memory resource configuration to align cluster resource allotment with actual usage.
 [![Vertical Pod Autoscaler](vpa.PNG)](vpa.PNG)
+
 -	When configured, it will set the requests automatically based on usage and thus allow proper scheduling onto nodes so that appropriate resource amount is available for each pod. It will also maintain ratios between limits and requests that were specified in initial containers configuration.
 - Fundamentally, the difference between VPA and HPA lies in how they scale. HPA scales by adding or removing pods—thus scaling capacity horizontally. VPA, however, scales by increasing or decreasing CPU and memory resources within the existing pod containers—thus scaling capacity vertically.
+
 **Installation and configuration on AKS cluster** :
 - Assumption And Prerequisites :
 . `AKS` cluster is running Kubernetes version 1.24 and higher.
 . The `Azure CLI` version 2.0.64 or later installed and configured.
 . `kubectl` should be connected to the cluster you want to install VPA.
 - Configuration :
+
 1- Install and update the aks-preview Azure CLI extension:
 ```bash
 az extension add --name aks-preview
@@ -59,6 +62,7 @@ The vpa project consists of 3 components :
 •	Admission Plugin - it sets the correct resource requests on new pods (either just created or recreated by their controller due to Updater's activity).
 
 **Demo: example of VPA**
+
 With everything configured, let’s take a basic application ,deploy it on the cluster we just built and scale the cluster based on the VPA recommendation.
 I will use in this demo , a sample app named 'hamster'
 my aks cluster named 'aks-lab' have 3 nodes ,and i use the 1.24.6 kuberntes version for this demo
@@ -91,7 +95,7 @@ hamster3-6c69df5869-xdgf6   0/1     Pending   0          2m21s
 ```
 Some of the pods are in a pending status , if we run describe one of this pods :
 ```bash
-root@EB850FSIG-18:/mnt/c/Users/ssegni/FFF/VPA-AKS# kubectl describe po  hamster3-6c69df5869-xdgf6
+root@EB850FSIG-18:VPA-AKS# kubectl describe po  hamster3-6c69df5869-xdgf6
 Name:           hamster3-6c69df5869-xdgf6
 Namespace:      hamster
 .
@@ -126,7 +130,7 @@ aks-nodepool1-14294776-vmss000004   Ready    agent   60s     v1.24.6
 aks-nodepool1-14294776-vmss000005   Ready    agent   76s     v1.24.6
 ```
 ```bash
-root@EB850FSIG-18:/mnt/c/Users/ssegni/FFF/VPA-AKS# kubectl get po
+root@EB850FSIG-18:VPA-AKS# kubectl get po
 NAME                        READY   STATUS    RESTARTS   AGE
 hamster1-5584cc7969-26qhc   1/1     Running   0          5m31s
 hamster1-5584cc7969-wpctj   1/1     Running   0          5m31s
@@ -137,7 +141,7 @@ hamster3-6c69df5869-xdgf6   1/1     Running   0          4m35s
 ```
 -But if we check the real value of cpu and memory utilization , is really we need this number of nodes to run our pods ?
 ```bash
-root@EB850FSIG-18:/mnt/c/Users/ssegni/FFF/VPA-AKS# kubectl resource-capacity --pods --util -n hamster
+root@EB850FSIG-18:VPA-AKS# kubectl resource-capacity --pods --util -n hamster
 NODE                                POD                         CPU REQUESTS   CPU LIMITS    CPU UTIL     MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
 *                                   *                           6000m (52%)    9000m (78%)   0Mi (0%)     3000Mi (10%)      5400Mi (19%)    0Mi (0%)
 
@@ -247,7 +251,7 @@ Namespace:    hamster
       cpu:        587m
       memory:     262144k
 ```
-Now let's come back and compare the value of cpu and memeory utlization with this recommandtions values:
+Now let's come back and compare the value of cpu and memory utlization with this recommandtions values:
 ```bash
  kubectl resource-capacity --pods --util -n hamster
 NODE                                POD                         CPU REQUESTS   CPU LIMITS    CPU UTIL     MEMORY REQUESTS       MEMORY LIMITS   MEMORY UTIL
@@ -275,7 +279,7 @@ aks-nodepool1-14294776-vmss000005   hamster2-684cc564f-2zkvt    587m (30%)     8
 
 And finaly let's check our nodes :
 ```bash
-root@EB850FSIG-18:/mnt/c/Users/ssegni/FFF/VPA-AKS# kubectl get nodes
+root@EB850FSIG-18:VPA-AKS# kubectl get nodes
 NAME                                STATUS   ROLES   AGE     VERSION
 aks-nodepool1-14294776-vmss000000   Ready    agent   2d19h   v1.24.6
 aks-nodepool1-14294776-vmss000001   Ready    agent   2d19h   v1.24.6
@@ -283,3 +287,6 @@ aks-nodepool1-14294776-vmss000002   Ready    agent   2d19h   v1.24.6
 aks-nodepool1-14294776-vmss000004   Ready    agent   51m     v1.24.6
 ```
 > Based on the new values of request and limits , the k8s sechduler find more resource and replainfied some of the pods in other nodes , and the cluster autoscale decreese the nodes number from 6 nodes to 4 nodes.
+## Limitations of Kubernetes VPA
+- Do not use Vertical Pod Autoscaler with the Horizontal Pod Autoscaler, which scales based on the same resource metrics such as CPU and MEMORY usage. This is because when a metric (CPU/MEMORY) reaches its defined threshold, the scaling event will happen for both VPA and HPA at the same time, which may have unknown side effects and may lead to issues.
+- VPA might recommend more resources than available in the cluster, thus causing the pod to not be assigned to a node (due to insufficient resources) and therefore never run. To overcome this limitation, it’s a good idea to set the LimitRange to the maximum available resources. This will ensure that pods do not ask for more resources than the LimitRange defines.
