@@ -21,7 +21,7 @@ Requests and limits depend on how much memory and CPU the application uses.Those
 •	An application that stores documents in the database might behave differently as more traffic is ingested.
 ### Use of VPA : Vertical Pod Autoscaler
 - Kubernetes Vertical Pod Autoscaler (VPA) is a component you install in your cluster. It increases and decreases container CPU and memory resource configuration to align cluster resource allotment with actual usage.
-[![Vertical Pod Autoscaler](vpa.PNG)](vpa.PNG)
+[![Vertical Pod Autoscaler](doc-image/vpa.PNG)](doc-image/vpa.PNG)
 
 -	When configured, it will set the requests automatically based on usage and thus allow proper scheduling onto nodes so that appropriate resource amount is available for each pod. It will also maintain ratios between limits and requests that were specified in initial containers configuration.
 - Fundamentally, the difference between VPA and HPA lies in how they scale. HPA scales by adding or removing pods—thus scaling capacity horizontally. VPA, however, scales by increasing or decreasing CPU and memory resources within the existing pod containers—thus scaling capacity vertically.
