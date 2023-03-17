@@ -75,40 +75,40 @@ aks-nodepool1-14294776-vmss000002   Ready    agent   2d18h   v1.24.6
 ```
 ```bash
 ls
-README.md  doc-image             hamster3-deploy.yaml  vpa-hamster1-autodeploy.yaml  vpa-hamster3-autodeploy.yaml
-hamster2-deploy.yaml  hasmter1-deploy.yaml  vpa-hamster2-autodeploy.yaml
+README.md  doc-image  hasmter1-deploy.yaml  vpa-hamster1-autodeploy.yaml
 ```
-le's' deploy the 3 hamster app :
+le's' deploy the  hamster app :
 ```bash
-kubectl apply -f hasmter1-deploy.yaml -f hamster2-deploy.yaml  -f hamster3-deploy.yaml
+kubectl apply -f hasmter1-deploy.yaml
 ```
 and let's check the pods status :
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl get po
 NAME                        READY   STATUS    RESTARTS   AGE
-hamster1-5584cc7969-26qhc   1/1     Running   0          3m17s
-hamster1-5584cc7969-wpctj   1/1     Running   0          3m17s
-hamster2-684cc564f-m4xvb    1/1     Running   0          2m40s
-hamster2-684cc564f-qn4z2    1/1     Running   0          2m40s
-hamster3-6c69df5869-98f9n   0/1     Pending   0          2m21s
-hamster3-6c69df5869-xdgf6   0/1     Pending   0          2m21s
+hamster1-5584cc7969-88mcb   0/1     Pending   0          80s
+hamster1-5584cc7969-dbxz9   0/1     Pending   0          80s
+hamster1-5584cc7969-l8wsl   1/1     Running   0          80s
+hamster1-5584cc7969-rlxqh   0/1     Pending   0          80s
+hamster1-5584cc7969-rxj4q   0/1     Pending   0          80s
+hamster1-5584cc7969-wmzcs   0/1     Pending   0          80s
 ```
 Some of the pods are in a pending status , if we run describe one of this pods :
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl describe po  hamster3-6c69df5869-xdgf6
-Name:           hamster3-6c69df5869-xdgf6
+Name:          hamster1-5584cc7969-rxj4q
 Namespace:      hamster
 .
 .
 .
 Events:
-  Type     Reason            Age   From               Message
-  ----     ------            ----  ----               -------
-  Warning  FailedScheduling  53s   default-scheduler  0/3 nodes are available: 3 Insufficient cpu. preemption: 0/3 nodes are available: 3 No preemption victims found for incoming pod.
+  Type     Reason            Age   From                Message
+  ----     ------            ----  ----                -------
+  Warning  FailedScheduling  112s  default-scheduler   0/2 nodes are available: 2 Insufficient cpu. preemption: 0/2 nodes are available: 2 No preemption victims found for incoming pod.
+  Normal   TriggeredScaleUp  106s  cluster-autoscaler  pod triggered scale-up: [{aks-nodepool1-14294776-vmss 2->7 (max: 10)}]
 ```
 - if we make a look to one of the deplpyment manifsest file we will find that we have define the below limit and request for each container :
 ```bash
-kubectl describe po hamster-5bccbb88c6-58qmj
+kubectl describe po hamster1-5584cc7969-rxj4q
 
    Limits:
       cpu:     1500m
@@ -122,46 +122,49 @@ So after some moments the cluster create a new nodes for us and our pods are in 
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl get nodes
 NAME                                STATUS   ROLES   AGE     VERSION
-aks-nodepool1-14294776-vmss000000   Ready    agent   2d18h   v1.24.6
-aks-nodepool1-14294776-vmss000001   Ready    agent   2d18h   v1.24.6
-aks-nodepool1-14294776-vmss000002   Ready    agent   2d18h   v1.24.6
-aks-nodepool1-14294776-vmss000003   Ready    agent   98s     v1.24.6
-aks-nodepool1-14294776-vmss000004   Ready    agent   60s     v1.24.6
-aks-nodepool1-14294776-vmss000005   Ready    agent   76s     v1.24.6
+aks-nodepool1-14294776-vmss000000   Ready    agent   31d     v1.24.6
+aks-nodepool1-14294776-vmss000001   Ready    agent   31d     v1.24.6
+aks-nodepool1-14294776-vmss00000a   Ready    agent   2m22s   v1.24.6
+aks-nodepool1-14294776-vmss00000b   Ready    agent   2m23s   v1.24.6
+aks-nodepool1-14294776-vmss00000c   Ready    agent   2m38s   v1.24.6
+aks-nodepool1-14294776-vmss00000d   Ready    agent   2m28s   v1.24.6
+aks-nodepool1-14294776-vmss00000e   Ready    agent   2m38s   v1.24.6
 ```
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl get po
 NAME                        READY   STATUS    RESTARTS   AGE
-hamster1-5584cc7969-26qhc   1/1     Running   0          5m31s
-hamster1-5584cc7969-wpctj   1/1     Running   0          5m31s
-hamster2-684cc564f-m4xvb    1/1     Running   0          4m54s
-hamster2-684cc564f-qn4z2    1/1     Running   0          4m54s
-hamster3-6c69df5869-98f9n   1/1     Running   0          4m35s
-hamster3-6c69df5869-xdgf6   1/1     Running   0          4m35s
+hamster1-5584cc7969-88mcb   1/1     Running   0          3m50s
+hamster1-5584cc7969-dbxz9   1/1     Running   0          3m50s
+hamster1-5584cc7969-l8wsl   1/1     Running   0          3m50s
+hamster1-5584cc7969-rlxqh   1/1     Running   0          3m50s
+hamster1-5584cc7969-rxj4q   1/1     Running   0          3m50s
+hamster1-5584cc7969-wmzcs   1/1     Running   0          3m50s
 ```
 -But if we check the real value of cpu and memory utilization , is really we need this number of nodes to run our pods ?
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl resource-capacity --pods --util -n hamster
 NODE                                POD                         CPU REQUESTS   CPU LIMITS    CPU UTIL     MEMORY REQUESTS   MEMORY LIMITS   MEMORY UTIL
-*                                   *                           6000m (52%)    9000m (78%)   0Mi (0%)     3000Mi (10%)      5400Mi (19%)    0Mi (0%)
+*                                   *                           6000m (45%)    9000m (67%)   0Mi (0%)     3000Mi (9%)       5400Mi (16%)    0Mi (0%)
 
-aks-nodepool1-14294776-vmss000000   *                           1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
-aks-nodepool1-14294776-vmss000000   hamster1-5584cc7969-wpctj   1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss000000   *                           0Mi (0%)       0Mi (0%)      0Mi (0%)     0Mi (0%)          0Mi (0%)        0Mi (0%)
 
-aks-nodepool1-14294776-vmss000001   *                           1000m (52%)    1500m (78%)   498m (26%)   500Mi (10%)       900Mi (19%)     3Mi (0%)
-aks-nodepool1-14294776-vmss000001   hamster2-684cc564f-m4xvb    1000m (52%)    1500m (78%)   498m (26%)   500Mi (10%)       900Mi (19%)     3Mi (0%)
+aks-nodepool1-14294776-vmss000001   *                           1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     3Mi (0%)
+aks-nodepool1-14294776-vmss000001   hamster1-5584cc7969-l8wsl   1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     3Mi (0%)
 
-aks-nodepool1-14294776-vmss000002   *                           1000m (52%)    1500m (78%)   500m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
-aks-nodepool1-14294776-vmss000002   hamster1-5584cc7969-26qhc   1000m (52%)    1500m (78%)   500m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000a   *                           1000m (52%)    1500m (78%)   497m (26%)   500Mi (10%)       900Mi (19%)     1Mi (0%)
+aks-nodepool1-14294776-vmss00000a   hamster1-5584cc7969-rxj4q   1000m (52%)    1500m (78%)   497m (26%)   500Mi (10%)       900Mi (19%)     1Mi (0%)
 
-aks-nodepool1-14294776-vmss000003   *                           1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
-aks-nodepool1-14294776-vmss000003   hamster2-684cc564f-qn4z2    1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000b   *                           1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000b   hamster1-5584cc7969-rlxqh   1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
 
-aks-nodepool1-14294776-vmss000004   *                           1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
-aks-nodepool1-14294776-vmss000004   hamster3-6c69df5869-xdgf6   1000m (52%)    1500m (78%)   502m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000c   *                           1000m (52%)    1500m (78%)   495m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000c   hamster1-5584cc7969-88mcb   1000m (52%)    1500m (78%)   495m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
 
-aks-nodepool1-14294776-vmss000005   *                           1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
-aks-nodepool1-14294776-vmss000005   hamster3-6c69df5869-98f9n   1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000d   *                           1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000d   hamster1-5584cc7969-wmzcs   1000m (52%)    1500m (78%)   501m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+
+aks-nodepool1-14294776-vmss00000e   *                           1000m (52%)    1500m (78%)   497m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
+aks-nodepool1-14294776-vmss00000e   hamster1-5584cc7969-dbxz9   1000m (52%)    1500m (78%)   497m (26%)   500Mi (10%)       900Mi (19%)     2Mi (0%)
 ```
 > the Cpu utilization is 501m and we have define a the value of cpu request to 1000m (1cpu) and the limit to 1500m
 
@@ -170,11 +173,11 @@ aks-nodepool1-14294776-vmss000005   hamster3-6c69df5869-98f9n   1000m (52%)    1
 - We need to adjust this value , so let's deploy the vertical pod autoscaler for this pods and check the vpa recommndation
 
 ```bash
-kubectl apply -f vpa-hamster3-autodeploy.yaml -f vpa-hamster2-autodeploy.yaml -f vpa-hamster3-autodeploy.yaml
+kubectl apply -f vpa-hamster1-autodeploy.yaml
 ```
-Allow the pod to run at least 5 , and run the fllowing command to view the vpa recommandation:
+Allow the pod to run at least 5min , and run the fllowing command to view the vpa recommandation:
 ```bash
-➜ kubecl get vpa
+➜ kubectl get vpa
 ➜ kubectl describe vpa vpa-auto-h1
 
 Name:         vpa-auto-h1
@@ -190,7 +193,7 @@ Spec:
   Target Ref:
     API Version:  apps/v1
     Kind:         Deployment
-    Name:         hamster3
+    Name:         hamster1
   Update Policy:
     Update Mode:  Auto
 Status:
@@ -226,20 +229,20 @@ Check the status of the pods , because we use the vpa with the "Auto" mode  , th
 ```bash
 root@EB850FSIG-18:VPA-AKS# kubectl get po
 NAME                        READY   STATUS        RESTARTS   AGE
-hamster1-5584cc7969-kfvds   1/1     Running       0          16s
-hamster1-5584cc7969-q97bx   1/1     Running       0          76s
-hamster1-5584cc7969-wpctj   1/1     Terminating   0          36m
-hamster2-684cc564f-2zkvt    1/1     Running       0          76s
-hamster2-684cc564f-m4xvb    1/1     Terminating   0          36m
-hamster2-684cc564f-skznl    1/1     Running       0          16s
-hamster3-6c69df5869-98f9n   1/1     Running       0          36m
-hamster3-6c69df5869-xdgf6   1/1     Running       0          36m
+hamster1-5584cc7969-88mcb   1/1     Running       0          16s
+hamster1-5584cc7969-dbxz9   1/1     Running       0          76s
+hamster1-5584cc7969-l8wsl   1/1     Terminating   0          36m
+hamster1-5584cc7969-rlxqh   1/1     Running       0          76s
+hamster1-5584cc7969-rxj4q   1/1     Terminating   0          36m
+hamster1-5584cc7969-wmzcs   1/1     Running       0          16s
+hamster1-6c69df5869-98f9n   1/1     Running       0          36m
+hamster1-6c69df5869-xdgf6   1/1     Running       0          36m
 
 ```
 If we describe one of this pods and focus to the value of request and limits:
 ```bash
 root@EB850FSIG-18:/mnt/c/Users/ssegni/FFF/VPA-AKS# kubectl describe po hamster1-5584cc7969-kfvds
-Name:         hamster1-5584cc7969-kfvds
+Name:         hamster1-5584cc7969-88mcb
 Namespace:    hamster
 ....
 ...
@@ -258,22 +261,22 @@ NODE                                POD                         CPU REQUESTS   C
 *                                   *                           3522m (30%)    5280m (46%)   0Mi (0%)     1572864000000m (5%)   2700Mi (9%)     0Mi (0%)
 
 aks-nodepool1-14294776-vmss000000   *                           587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
-aks-nodepool1-14294776-vmss000000   hamster3-6c69df5869-h9s9t   587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss000001    hamster1-5584cc7969-l8wsl  587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
 
 aks-nodepool1-14294776-vmss000001   *                           0Mi (0%)       0Mi (0%)      0Mi (0%)     0Mi (0%)              0Mi (0%)        0Mi (0%)
 
-aks-nodepool1-14294776-vmss000002   *                           1174m (61%)    1760m (92%)   898m (47%)   524288000000m (10%)   900Mi (19%)     3Mi (0%)
-aks-nodepool1-14294776-vmss000002   hamster2-684cc564f-skznl    587m (30%)     880m (46%)    449m (23%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
-aks-nodepool1-14294776-vmss000002   hamster3-6c69df5869-7w28v   587m (30%)     880m (46%)    450m (23%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000a   *                           1174m (61%)    1760m (92%)   898m (47%)   524288000000m (10%)   900Mi (19%)     3Mi (0%)
+aks-nodepool1-14294776-vmss00000a   hamster1-5584cc7969-rxj4q   587m (30%)     880m (46%)    449m (23%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000a   hamster1-5584cc7969-rxj4q   587m (30%)     880m (46%)    450m (23%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
 
-aks-nodepool1-14294776-vmss000003   *                           587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
-aks-nodepool1-14294776-vmss000003   hamster1-5584cc7969-kfvds   587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000b  *                            587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000b   hamster1-5584cc7969-rlxqh   587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
 
-aks-nodepool1-14294776-vmss000004   *                           587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
-aks-nodepool1-14294776-vmss000004   hamster1-5584cc7969-q97bx   587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000c   *                           587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000c   hamster1-5584cc7969-88mcb   587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
 
-aks-nodepool1-14294776-vmss000005   *                           587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
-aks-nodepool1-14294776-vmss000005   hamster2-684cc564f-2zkvt    587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000d  *                            587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
+aks-nodepool1-14294776-vmss00000d  hamster1-5584cc7969-wmzcs    587m (30%)     880m (46%)    457m (24%)   262144000000m (5%)    450Mi (9%)      2Mi (0%)
 ```
 > Like we have here , the vpa adjust automaticaly CPU and memory request and limit adjustments based on historical resource usage measurements.
 
@@ -283,8 +286,8 @@ root@EB850FSIG-18:VPA-AKS# kubectl get nodes
 NAME                                STATUS   ROLES   AGE     VERSION
 aks-nodepool1-14294776-vmss000000   Ready    agent   2d19h   v1.24.6
 aks-nodepool1-14294776-vmss000001   Ready    agent   2d19h   v1.24.6
-aks-nodepool1-14294776-vmss000002   Ready    agent   2d19h   v1.24.6
-aks-nodepool1-14294776-vmss000004   Ready    agent   51m     v1.24.6
+aks-nodepool1-14294776-vmss00000a  Ready    agent   2d19h   v1.24.6
+aks-nodepool1-14294776-vmss00000b   Ready    agent   51m     v1.24.6
 ```
 > Based on the new values of request and limits , the k8s sechduler find more resource and replainfied some of the pods in other nodes , and the cluster autoscale decreese the nodes number from 6 nodes to 4 nodes.
 ## Limitations of Kubernetes VPA

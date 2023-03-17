@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: hamster1
-  replicas: 2
+  replicas: 6
   template:
     metadata:
       labels:
